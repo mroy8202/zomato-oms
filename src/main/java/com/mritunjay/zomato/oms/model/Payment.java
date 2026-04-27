@@ -8,6 +8,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Table(
+        name = "payment",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_payment_idempotency_key",
+                        columnNames = "idempotency_key"
+                )
+        }
+)
 @Data
 @Builder
 @NoArgsConstructor
@@ -28,5 +37,9 @@ public class Payment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
+
+    // Unique key to ensure idempotency (no duplicate processing)
+    @Column(name = "idempotency_key", nullable = false)
+    private String idempotencyKey;
 
 }
