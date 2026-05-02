@@ -9,12 +9,14 @@ import com.mritunjay.zomato.oms.repository.OrderRepository;
 import com.mritunjay.zomato.oms.repository.PaymentRepository;
 import com.mritunjay.zomato.oms.statemachine.OrderStateMachine;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
@@ -22,10 +24,13 @@ public class PaymentService {
 
     public Payment processPayment(PaymentRequestDto request) {
 
+        log.info("Processing payment for order {}", request.getOrderId());
+
         // check idempotency
         Optional<Payment> existing = paymentRepository.findByIdempotencyKey(request.getIdempotencyKey());
 
         if(existing.isPresent()) {
+            log.info("Returning existing payment for idempotencyKey {}", request.getIdempotencyKey());
             return existing.get(); // returns old result (no duplicate)
         }
 
@@ -41,13 +46,24 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.SUCCESS);
         payment.setIdempotencyKey(request.getIdempotencyKey());
 
+        // simulate success/failure
+        if(Math.random() < 0.3) {
+            payment.setStatus(PaymentStatus.FAILED);
+        } else {
+            payment.setStatus(PaymentStatus.SUCCESS);
+        }
+
         paymentRepository.save(payment);
 
         // Update order status using state machine
-        if(OrderStateMachine.canTransition(order.getStatus(), OrderStatus.CONFIRMED)) {
-            order.setStatus(OrderStatus.CONFIRMED);
-        }
 
+        if(payment.getStatus() == PaymentStatus.SUCCESS) {
+            if(OrderStateMachine.canTransition(order.getStatus(), OrderStatus.CONFIRMED)) {
+                order.setStatus(OrderStatus.CONFIRMED);
+                orderRepository.save(order);
+            }
+        }
+        
         return payment;
     }
 

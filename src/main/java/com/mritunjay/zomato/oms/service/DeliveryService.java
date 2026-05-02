@@ -8,6 +8,10 @@ import com.mritunjay.zomato.oms.repository.DeliveryPartnerRepository;
 import com.mritunjay.zomato.oms.repository.OrderRepository;
 import com.mritunjay.zomato.oms.statemachine.OrderStateMachine;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,14 +19,22 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DeliveryService {
 
     private final DeliveryPartnerRepository partnerRepository;
     private final OrderRepository orderRepository;
     private final AssignmentStrategy strategy;
 
+    @Retryable(
+            value = {Exception.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 200)
+    )
     @Transactional
     public Order assignPartner(Long orderId) {
+
+        log.info("Assigning partner for order {}", orderId);
 
         // Fetch order
         Order order = orderRepository.findById(orderId)
@@ -58,6 +70,13 @@ public class DeliveryService {
 
         return orderRepository.save(order);
 
+    }
+
+    // recovery after retries fails
+    @Recover
+    public Order recover(Exception ex, Long orderId) {
+        log.error("Failed to assign partner after retries for order {}", orderId);
+        throw new RuntimeException("Delivery assignment failed after retries");
     }
 
 }
