@@ -1,9 +1,9 @@
-package com.mritunjay.zomato.oms.dto;
+package com.mritunjay.zomato.oms.dto.Order;
 
 import lombok.Data;
 
 @Data
-public class OrderItemRequest {
+public class OrderItemRequestDTO {
 
     private Long itemId;
     private Integer quantity;

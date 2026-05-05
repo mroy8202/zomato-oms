@@ -1,9 +1,6 @@
 package com.mritunjay.zomato.oms.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,5 +24,11 @@ public class DeliveryPartner {
     private Double latitude;
 
     private Double longitude;
+
+    // Added @Version for optimistic locking as a safety net alongside
+    // the pessimistic lock in DeliveryPartnerRepository
+    @Version
+    @Builder.Default
+    private Integer version = 0;
 
 }

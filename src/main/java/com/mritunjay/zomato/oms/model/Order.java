@@ -30,8 +30,9 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
-    @Version // for concurrency
-    private Integer version;
+    @Version
+    @Builder.Default
+    private Integer version = 0;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> items;

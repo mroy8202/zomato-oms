@@ -13,7 +13,7 @@ import java.util.List;
 public interface DeliveryPartnerRepository extends JpaRepository<DeliveryPartner, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT  p FROM DeliveryPartner p WHERE p.available = true")
+    @Query("SELECT p FROM DeliveryPartner p WHERE p.available = true")
     List<DeliveryPartner> findAvailableForUpdate();
 
 }

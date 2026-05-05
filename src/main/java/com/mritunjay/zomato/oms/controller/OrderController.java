@@ -1,10 +1,12 @@
 package com.mritunjay.zomato.oms.controller;
 
-import com.mritunjay.zomato.oms.dto.CreateOrderRequest;
+import com.mritunjay.zomato.oms.dto.Order.CreateOrderRequestDTO;
+import com.mritunjay.zomato.oms.dto.Order.OrderResponseDTO;
 import com.mritunjay.zomato.oms.enums.OrderStatus;
-import com.mritunjay.zomato.oms.model.Order;
 import com.mritunjay.zomato.oms.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,14 +17,20 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public Order createOrder(@RequestBody CreateOrderRequest request) {
-        return orderService.createOrder(request);
+    public ResponseEntity<OrderResponseDTO> createOrder(@RequestBody CreateOrderRequestDTO request) {
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(orderService.createOrder(request));
+
     }
 
     @PutMapping("/{id}/status")
-    public Order UpdateStatus(@PathVariable Long id,
+    public ResponseEntity<OrderResponseDTO> updateStatus(@PathVariable Long id,
                               @RequestParam OrderStatus status) {
-        return orderService.updateStatus(id, status);
+
+        return ResponseEntity
+                .ok(orderService.updateStatus(id, status));
     }
 
 }

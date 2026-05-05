@@ -1,9 +1,9 @@
-package com.mritunjay.zomato.oms.dto;
+package com.mritunjay.zomato.oms.dto.Payment;
 
 import lombok.Data;
 
 @Data
-public class PaymentRequestDto {
+public class PaymentRequestDTO {
 
     private Long orderId;
     private Double amount;
