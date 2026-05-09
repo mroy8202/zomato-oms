@@ -1,6 +1,5 @@
 package com.mritunjay.zomato.oms.service;
 
-import com.mritunjay.zomato.oms.delivery.assignment.AssignmentStrategy;
 import com.mritunjay.zomato.oms.dto.Delivery.DeliveryResponseDTO;
 import com.mritunjay.zomato.oms.enums.OrderStatus;
 import com.mritunjay.zomato.oms.exception.InvalidStateTransitionException;
@@ -12,6 +11,7 @@ import com.mritunjay.zomato.oms.model.Order;
 import com.mritunjay.zomato.oms.repository.DeliveryPartnerRepository;
 import com.mritunjay.zomato.oms.repository.OrderRepository;
 import com.mritunjay.zomato.oms.statemachine.OrderStateMachine;
+import com.mritunjay.zomato.oms.strategy.delivery.AssignmentStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.retry.annotation.Backoff;
@@ -39,7 +39,7 @@ public class DeliveryService {
     )
     public DeliveryResponseDTO assignPartner(Long orderId) {
 
-        log.info("Attempting to assign delivery partner for order {}", orderId);
+        log.info("Attempting delivery assignment for orderId [{}]", orderId);
         return doAssignPartner(orderId);
 
     }
@@ -52,35 +52,29 @@ public class DeliveryService {
 
         // Idempotency: skip re-assignment if already assigned
         if(order.getDeliveryPartner() != null) {
-            log.info("Order {} already has a delivery partner, skipping reassignment", orderId);
+            log.info("Order [{}] already has partner [{}], skipping", orderId, order.getDeliveryPartner().getId());
             return deliveryMapper.convertOrderEntityToDeliveryResponseDto(order);
         }
 
-        // FIX: State should be CONFIRMED → PREPARING before OUT_FOR_DELIVERY.
-        // DeliveryService assigns partner and moves order to OUT_FOR_DELIVERY.
-        // Valid transition here is CONFIRMED → OUT_FOR_DELIVERY only if PREPARING
-        // was already done. In our flow, payment confirms the order, then delivery
-        // is triggered — so we validate CONFIRMED → OUT_FOR_DELIVERY is now
-        // allowed only after PREPARING. Since PaymentSuccessEvent fires right after
-        // CONFIRMED, we keep CONFIRMED → PREPARING → OUT_FOR_DELIVERY sequential.
-        // Here we assume order is in CONFIRMED state (from payment), and we
-        // first move it to PREPARING, then to OUT_FOR_DELIVERY.
+        // State machine validation
+        // Order must be CONFIRMED before we can move it to PREPARING
         if(OrderStateMachine.cannotTransition(order.getStatus(), OrderStatus.PREPARING)) {
             throw new InvalidStateTransitionException(order.getStatus(), OrderStatus.PREPARING);
         }
 
-        // Lock and fetch available partners
+        // Pessimistic lock: fetch available partners
+        // SELECT ... FOR UPDATE ensures no two transactions assign the same partner
         List<DeliveryPartner> partners = partnerRepository.findAvailableForUpdate();
         if(partners.isEmpty()) {
-            // Use  exception so @Retryable knows what to retry on
-            throw new NoDeliveryPartnerAvailableException();
+            throw new NoDeliveryPartnerAvailableException(); // triggers retry
         }
 
-        log.info("Found {} available delivery partners", partners.size());
+        log.info("Found {} available partners for orderId [{}]", partners.size(), orderId);
 
-        // Assign using strategy (random / nearest etc.)
+        // Strategy: pick partner (Random or Nearest)
+        // Currently picks Nearest Delivery partner as it is marked with @Primary
         DeliveryPartner assigned = strategy.assign(partners);
-        log.info("Assigned delivery partner {} to order {}", assigned.getId(), orderId);
+        log.info("Assigned partner [{}] to orderId [{}]", assigned.getId(), orderId);
 
         // mark partner unavailable and save
         assigned.setAvailable(false);
@@ -101,7 +95,7 @@ public class DeliveryService {
     // Called after all retries are exhausted
     @Recover
     public DeliveryResponseDTO recover(NoDeliveryPartnerAvailableException ex, Long orderId) {
-        log.error("All retries exhausted. Could not assign delivery partner for order {}", orderId);
+        log.error("All 3 retry attempts exhausted for orderId [{}]. No partner available.", orderId);
         throw new RuntimeException("Delivery assignment failed after retries for order: " + orderId);
     }
 

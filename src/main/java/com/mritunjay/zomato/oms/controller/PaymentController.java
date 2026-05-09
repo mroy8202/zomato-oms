@@ -18,6 +18,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    // POST /payments — manually trigger payment (bypasses Kafka, for testing)
     @PostMapping
     public ResponseEntity<PaymentResponseDTO> process(@RequestBody PaymentRequestDTO request) {
 

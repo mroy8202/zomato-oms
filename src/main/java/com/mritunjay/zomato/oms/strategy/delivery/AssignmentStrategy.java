@@ -1,4 +1,4 @@
-package com.mritunjay.zomato.oms.delivery.assignment;
+package com.mritunjay.zomato.oms.strategy.delivery;
 
 import com.mritunjay.zomato.oms.model.DeliveryPartner;
 

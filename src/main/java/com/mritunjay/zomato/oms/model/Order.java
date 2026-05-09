@@ -37,6 +37,9 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> items;
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<OrderStatusHistory> statusHistory;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "delivery_partner_id")
     private DeliveryPartner deliveryPartner;

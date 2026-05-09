@@ -16,6 +16,7 @@ public class OrderController {
 
     private final OrderService orderService;
 
+    // POST /orders — create a new order
     @PostMapping
     public ResponseEntity<OrderResponseDTO> createOrder(@RequestBody CreateOrderRequestDTO request) {
 
@@ -25,6 +26,25 @@ public class OrderController {
 
     }
 
+    // GET /orders/{id} — get order by id (includes history)
+    @GetMapping("/{id}")
+    public ResponseEntity<OrderResponseDTO> getOrder(@PathVariable Long id) {
+
+        return ResponseEntity
+                .ok(orderService.getOrder(id));
+
+    }
+
+    // DELETE /orders/{id}/cancel — cancel an order
+    @DeleteMapping("/{id}/cancel")
+    public ResponseEntity<OrderResponseDTO> cancelOrder(@PathVariable Long id) {
+
+        return ResponseEntity
+                .ok(orderService.cancelOrder(id));
+
+    }
+
+    // PUT /orders/{id}/status — manually update status (admin/internal use)
     @PutMapping("/{id}/status")
     public ResponseEntity<OrderResponseDTO> updateStatus(@PathVariable Long id,
                               @RequestParam OrderStatus status) {

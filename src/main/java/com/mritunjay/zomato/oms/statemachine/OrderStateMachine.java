@@ -36,12 +36,6 @@ public class OrderStateMachine {
         return !allowedStates.contains(to);
     }
 
-    public static void validateTransition(OrderStatus from, OrderStatus to) {
-        if(cannotTransition(from, to)) {
-            throw new InvalidStateTransitionException(from, to);
-        }
-    }
-
 }
 
 

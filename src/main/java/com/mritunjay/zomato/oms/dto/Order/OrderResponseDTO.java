@@ -17,5 +17,6 @@ public class OrderResponseDTO {
     private Long restaurantId;
     private Long deliveryPartnerId;
     private List<OrderItemResponseDTO> items;
+    private List<OrderStatusHistoryResponseDTO> statusHistory;
 
 }

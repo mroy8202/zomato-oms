@@ -16,6 +16,11 @@ public class DeliveryController {
 
     private final DeliveryService deliveryService;
 
+    /**
+     * POST /delivery/assign/{orderId}
+     * Admin endpoint for manual delivery assignment.
+     * Normally triggered automatically via Kafka consumer after payment success.
+     */
     @PostMapping("/assign/{orderId}")
     public ResponseEntity<DeliveryResponseDTO> assign(@PathVariable Long orderId) {
 

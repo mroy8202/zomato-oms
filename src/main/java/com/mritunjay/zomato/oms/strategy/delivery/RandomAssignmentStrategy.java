@@ -1,4 +1,4 @@
-package com.mritunjay.zomato.oms.delivery.assignment;
+package com.mritunjay.zomato.oms.strategy.delivery;
 
 import com.mritunjay.zomato.oms.exception.NoDeliveryPartnerAvailableException;
 import com.mritunjay.zomato.oms.model.DeliveryPartner;
@@ -14,10 +14,12 @@ public class RandomAssignmentStrategy implements AssignmentStrategy {
 
     @Override
     public DeliveryPartner assign(List<DeliveryPartner> partners) {
+
         if(partners.isEmpty()) {
             throw new NoDeliveryPartnerAvailableException();
         }
         return partners.get(random.nextInt(partners.size()));
+
     }
 
 }
